@@ -1,0 +1,8 @@
+.vscode
+.env
+
+config/*
+!config/postgresql.conf.example
+
+secrets/*
+!secrets/README.md

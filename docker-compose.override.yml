@@ -1,0 +1,10 @@
+services:
+  db:
+    networks:
+      - my_external_network
+  adminer:
+    networks:
+      - my_external_network
+networks:
+  my_external_network:
+    external: true

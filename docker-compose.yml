@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:${POSTGRES_IMAGE_VERSION:-15}
+    restart: always
+    shm_size: ${POSTGRES_SHM_SIZE:-128mb}
+    environment:
+      # Inject username and password securely via files.
+      POSTGRES_USER_FILE: /run/secrets/maintenance_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/maintenance_password
+      # Create a default database with the same name as the user
+      POSTGRES_DB: ${MAINTENANCE_USER:-postgres}
+    secrets:
+      - maintenance_user
+      - maintenance_password
+      # Uncomment to automatically inject other user secrets into the container
+      # - app_user
+      # - app_user_password
+    volumes:
+      # Use a volume for data (Highly recommended over bind mounts)
+      - pgdata:/var/lib/postgresql/data
+      # Use a bind mount for declarative configuration
+      - ./config/postgresql.conf:/etc/postgresql/custom_conf/postgresql.conf:ro
+      # Scripts here auto-execute during the FIRST initialization of the DB
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/custom_conf/postgresql.conf"
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+  # Using a docker named volume ensures permissions are managed correctly by the Docker daemon
+  pgdata:
+
+secrets:
+  maintenance_user:
+    file: ./secrets/maintenance_user.txt
+  maintenance_password:
+    file: ./secrets/maintenance_password.txt
+  # app_user:
+  #   file: ./secrets/app_user_user.txt
+  # app_user_password:
+  #   file: ./secrets/app_user_password.txt
