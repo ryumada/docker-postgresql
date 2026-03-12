@@ -100,8 +100,8 @@ if cd "$PATH_TO_REPO" && docker compose ps --services --filter "status=running" 
 
     log_info "Running CREATE USER command..."
     # Using docker run instead of host psql to avoid requiring local postgres-client
-    docker run -i --rm --network "${NETWORK_NAME}" "postgres:${PG_VERSION}" psql -h "${DB_HOST}" -U "$MAINT_USER" -c "CREATE USER ${NEW_USER} WITH PASSWORD '${NEW_PASSWORD}';"
-    # docker run -i --rm --network "${NETWORK_NAME}" "postgres:${PG_VERSION}" psql -h "${DB_HOST}" -U "$MAINT_USER" -c "CREATE DATABASE ${NEW_USER} OWNER ${NEW_USER};"
+    docker run -i --rm --network "${NETWORK_NAME}" "postgres:${PG_VERSION}" psql -h "${DB_HOST}" -U "$MAINT_USER" -c "CREATE USER ${NEW_USER} WITH CREATEDB LOGIN PASSWORD '${NEW_PASSWORD}';"
+    docker run -i --rm --network "${NETWORK_NAME}" "postgres:${PG_VERSION}" psql -h "${DB_HOST}" -U "$MAINT_USER" -c "CREATE DATABASE ${NEW_USER} OWNER ${NEW_USER};"
     log_success "User ${NEW_USER} and database successfully created."
 else
     log_warn "DB Container is not running."
