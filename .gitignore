@@ -1,8 +1,10 @@
 .vscode
 .env
+.env.backup*
 
 config/*
 !config/postgresql.conf.example
+!config/postgresql.conf.template
 
 secrets/*
 !secrets/README.md

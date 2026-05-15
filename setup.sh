@@ -14,6 +14,8 @@ CONFIG_DIR="${PATH_TO_REPO}/config"
 MAINTENANCE_USER_FILE="${SECRETS_DIR}/maintenance_user.txt"
 MAINTENANCE_PASSWORD_FILE="${SECRETS_DIR}/maintenance_password.txt"
 PG_CONF_FILE="${CONFIG_DIR}/postgresql.conf"
+PG_CONF_TEMPLATE="${CONFIG_DIR}/postgresql.conf.template"
+UPDATE_ENV_SCRIPT="${PATH_TO_REPO}/scripts/utilities/update_env_file.sh"
 
 # --- Logging Functions & Colors ---
 readonly COLOR_RESET="\033[0m"
@@ -53,69 +55,40 @@ mkdir -p "$SECRETS_DIR"
 mkdir -p "$CONFIG_DIR"
 
 # 1. Load or initialize environment variables
-if [ ! -f "$ENV_FILE" ]; then
-    touch "$ENV_FILE"
-    log_info "Created empty $ENV_FILE"
+if [ -f "$UPDATE_ENV_SCRIPT" ]; then
+    bash "$UPDATE_ENV_SCRIPT"
+else
+    log_warn "Environment update script not found at $UPDATE_ENV_SCRIPT. Skipping sync."
+    if [ ! -f "$ENV_FILE" ]; then
+        touch "$ENV_FILE"
+        log_info "Created empty $ENV_FILE"
+    fi
 fi
 
-source "$ENV_FILE"
-
-# Prompt for missing crucial variables
-if [ -z "$MAINTENANCE_USER" ]; then
-    MAINTENANCE_USER="postgres"
-    echo "MAINTENANCE_USER=$MAINTENANCE_USER" >> "$ENV_FILE"
+# 2. Load and export all variables from .env for envsubst and subsequent steps
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+else
+    log_error ".env file missing after initialization. Aborting."
+    exit 1
 fi
 
-# Postgres Tuning Defaults (Production Grade for typical 4GB-8GB modern VM)
-POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-100}
-POSTGRES_SHARED_BUFFERS=${POSTGRES_SHARED_BUFFERS:-1GB}
-POSTGRES_EFFECTIVE_CACHE_SIZE=${POSTGRES_EFFECTIVE_CACHE_SIZE:-3GB}
-POSTGRES_MAINTENANCE_WORK_MEM=${POSTGRES_MAINTENANCE_WORK_MEM:-256MB}
-POSTGRES_CHECKPOINT_COMPLETION_TARGET=${POSTGRES_CHECKPOINT_COMPLETION_TARGET:-0.9}
-POSTGRES_WAL_BUFFERS=${POSTGRES_WAL_BUFFERS:-16MB}
-POSTGRES_DEFAULT_STATISTICS_TARGET=${POSTGRES_DEFAULT_STATISTICS_TARGET:-100}
-POSTGRES_RANDOM_PAGE_COST=${POSTGRES_RANDOM_PAGE_COST:-1.1}
-POSTGRES_EFFECTIVE_IO_CONCURRENCY=${POSTGRES_EFFECTIVE_IO_CONCURRENCY:-200}
-POSTGRES_WORK_MEM=${POSTGRES_WORK_MEM:-16MB}
-POSTGRES_MIN_WAL_SIZE=${POSTGRES_MIN_WAL_SIZE:-1GB}
-POSTGRES_MAX_WAL_SIZE=${POSTGRES_MAX_WAL_SIZE:-4GB}
-POSTGRES_MAX_WORKER_PROCESSES=${POSTGRES_MAX_WORKER_PROCESSES:-4}
-POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER=${POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER:-2}
 
-# Reload to ensure we have everything
-source "$ENV_FILE"
-
-# 2. Write Production Configuration
-log_info "Generating optimized postgresql.conf at $PG_CONF_FILE..."
-cat <<EOF > "$PG_CONF_FILE"
-# -----------------------------
-# Auto-generated Production PostgreSQL configuration
-# -----------------------------
-listen_addresses = '*'
-max_connections = $POSTGRES_MAX_CONNECTIONS
-shared_buffers = $POSTGRES_SHARED_BUFFERS
-effective_cache_size = $POSTGRES_EFFECTIVE_CACHE_SIZE
-maintenance_work_mem = $POSTGRES_MAINTENANCE_WORK_MEM
-checkpoint_completion_target = $POSTGRES_CHECKPOINT_COMPLETION_TARGET
-wal_buffers = $POSTGRES_WAL_BUFFERS
-default_statistics_target = $POSTGRES_DEFAULT_STATISTICS_TARGET
-random_page_cost = $POSTGRES_RANDOM_PAGE_COST
-effective_io_concurrency = $POSTGRES_EFFECTIVE_IO_CONCURRENCY
-work_mem = $POSTGRES_WORK_MEM
-min_wal_size = $POSTGRES_MIN_WAL_SIZE
-max_wal_size = $POSTGRES_MAX_WAL_SIZE
-max_worker_processes = $POSTGRES_MAX_WORKER_PROCESSES
-max_parallel_workers_per_gather = $POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER
-max_parallel_workers = $POSTGRES_MAX_WORKER_PROCESSES
-max_parallel_maintenance_workers = $POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER
-
-# Standard Formatting and Safety defaults
-log_timezone = 'UTC'
-datestyle = 'iso, mdy'
-timezone = 'UTC'
-dynamic_shared_memory_type = posix
-EOF
-log_success "PostgreSQL configuration successfully generated."
+# 3. Write Production Configuration
+log_info "Generating postgresql.conf via envsubst..."
+if [ -f "$PG_CONF_TEMPLATE" ]; then
+    # Dynamically identify all POSTGRES_ variables to substitute
+    # This ensures only our intended variables are replaced, preserving other $ strings in the config
+    VARS_TO_SUBSTITUTE=$(env | grep '^POSTGRES_' | cut -d= -f1 | sed 's/^/$/' | tr '\n' ',' | sed 's/,$//')
+    
+    envsubst "$VARS_TO_SUBSTITUTE" < "$PG_CONF_TEMPLATE" > "$PG_CONF_FILE"
+    log_success "PostgreSQL configuration successfully generated from template."
+else
+    log_error "Configuration template not found at $PG_CONF_TEMPLATE"
+    exit 1
+fi
 
 # 3. Handle Secrets
 log_info "Managing database secrets..."
