@@ -16,8 +16,8 @@ services:
       # - app_user
       # - app_user_password
     volumes:
-      # Use a volume for data (Highly recommended over bind mounts)
-      - pgdata:/var/lib/postgresql/data
+      # Data storage: Supports Docker named volume (e.g. pgdata) or host bind mount (e.g. ./data)
+      - ${POSTGRES_DATA_DIR:-pgdata}:/var/lib/postgresql/data
       # Use a bind mount for declarative configuration
       - ./config/postgresql.conf:/etc/postgresql/custom_conf/postgresql.conf:ro
       # Scripts here auto-execute during the FIRST initialization of the DB

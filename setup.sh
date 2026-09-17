@@ -75,8 +75,24 @@ else
     exit 1
 fi
 
+# 3. Handle Data Storage Directory (if host bind mount is configured)
+DATA_DIR="${POSTGRES_DATA_DIR:-pgdata}"
+if [[ "$DATA_DIR" =~ ^\./ ]] || [[ "$DATA_DIR" =~ ^/ ]] || [[ "$DATA_DIR" =~ ^\.\./ ]] || [[ "$DATA_DIR" == *"/"* ]]; then
+    log_info "Host bind mount directory configured: $DATA_DIR"
+    if [[ "$DATA_DIR" =~ ^/ ]]; then
+        RESOLVED_DATA_DIR="$DATA_DIR"
+    else
+        RESOLVED_DATA_DIR="${PATH_TO_REPO}/${DATA_DIR#./}"
+    fi
+    if [ ! -d "$RESOLVED_DATA_DIR" ]; then
+        mkdir -p "$RESOLVED_DATA_DIR"
+        log_success "Created data storage directory at $RESOLVED_DATA_DIR"
+    else
+        log_info "Data storage directory already exists at $RESOLVED_DATA_DIR"
+    fi
+fi
 
-# 3. Write Production Configuration
+# 4. Write Production Configuration
 log_info "Generating postgresql.conf via envsubst..."
 if [ -f "$PG_CONF_TEMPLATE" ]; then
     # Dynamically identify all POSTGRES_ variables to substitute
@@ -90,7 +106,7 @@ else
     exit 1
 fi
 
-# 3. Handle Secrets
+# 5. Handle Secrets
 log_info "Managing database secrets..."
 if [ -n "$MAINTENANCE_USER" ]; then
     echo "$MAINTENANCE_USER" > "$MAINTENANCE_USER_FILE"
@@ -108,7 +124,7 @@ else
 fi
 chmod 600 "$MAINTENANCE_USER_FILE" "$MAINTENANCE_PASSWORD_FILE"
 
-# 5. Handle External Docker Networks
+# 6. Handle External Docker Networks
 log_info "Verifying external Docker networks..."
 # Fallback to older singular variable if it exists instead of new array
 if [ -z "$EXTERNAL_NETWORK_NAMES" ] && [ -n "$EXTERNAL_NETWORK_NAME" ]; then

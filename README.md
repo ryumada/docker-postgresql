@@ -5,6 +5,7 @@ This repository provides a production-grade, highly optimized PostgreSQL deploym
 ## Features
 
 - **Automated Parameter Tuning:** Natively configures `postgresql.conf` based on your `.env` settings to fully utilize SSDs, parallel CPU query gathering, and optimized RAM buffers (pre-tuned for a 4GB-8GB VM).
+- **Flexible Data Storage:** Supports both Docker named volumes (e.g. `pgdata`) and host directory bind mounts (e.g. `./data` or `/path/to/data`) via `POSTGRES_DATA_DIR` in `.env`.
 - **Secure Secrets Management:** Removes hardcoded passwords from `docker-compose.yml`. Passwords are auto-generated as secure, humand-readable three-word passphrases injected directly into the container's `.txt` secret mounts.
 - **Dynamic Database Ownership:** A host-executed CLI script allows for the instant creation of application-specific users and database ownership transfers via temporary Docker containers (eliminating the need for a local `psql` client on the host).
 
@@ -19,7 +20,7 @@ This repository provides a production-grade, highly optimized PostgreSQL deploym
 
 ### 1. Configure the Environment
 
-Copy the example environment file and adjust the parameters to fit your needs (specifically the `EXTERNAL_NETWORK_NAME` if you are using an existing Docker network):
+Copy the example environment file and adjust the parameters to fit your needs (such as `POSTGRES_DATA_DIR` for choosing between a Docker named volume `pgdata` or a host bind directory `./data`, and `EXTERNAL_NETWORK_NAMES` if using existing Docker networks):
 
 ```bash
 cp .env.example .env
@@ -30,9 +31,11 @@ cp .env.example .env
 ### 2. Run the Initial Setup
 
 Execute the `setup.sh` script to automatically:
-1.  Read your `.env` file.
-2.  Generate a highly tuned `config/postgresql.conf`.
-3.  Auto-generate a secure 3-word passphrase for the primary `MAINTENANCE_USER` and save the credentials into the `./secrets` directory.
+1.  Read and synchronize your `.env` file.
+2.  Create the host data storage directory if a bind mount is specified.
+3.  Generate a highly tuned `config/postgresql.conf`.
+4.  Auto-generate a secure 3-word passphrase for the primary `MAINTENANCE_USER` and save the credentials into the `./secrets` directory.
+5.  Configure external Docker networks in `docker-compose.override.yml`.
 
 ```bash
 ./setup.sh

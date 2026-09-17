@@ -8,3 +8,7 @@ config/*
 
 secrets/*
 !secrets/README.md
+
+# Database data directory (when using host bind mounts)
+data/
+pgdata/
