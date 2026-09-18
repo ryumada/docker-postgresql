@@ -57,12 +57,12 @@
 
 # - Connection Settings -
 
-listen_addresses = $POSTGRES_LISTEN_ADDRESSES
+listen_addresses = '$POSTGRES_LISTEN_ADDRESSES'
 					# comma-separated list of addresses;
 					# defaults to 'localhost'; use '*' for all
 					# (change requires restart)
 #port = 5432				# (change requires restart)
-max_connections = $POSTGRES_MAX_CONNECTIONS
+max_connections = $POSTGRES_MAX_CONNECTIONS			# (change requires restart)
 #reserved_connections = 0		# (change requires restart)
 #superuser_reserved_connections = 3	# (change requires restart)
 #unix_socket_directories = '/tmp'	# comma-separated list of directories
@@ -129,30 +129,30 @@ max_connections = $POSTGRES_MAX_CONNECTIONS
 
 # - Memory -
 
-shared_buffers = $POSTGRES_SHARED_BUFFERS
+shared_buffers = $POSTGRES_SHARED_BUFFERS			# min 128kB
 					# (change requires restart)
 #huge_pages = try			# on, off, or try
 					# (change requires restart)
 #huge_page_size = 0			# zero for system default
 					# (change requires restart)
-temp_buffers = $POSTGRES_TEMP_BUFFERS
+temp_buffers = $POSTGRES_TEMP_BUFFERS			# min 800kB
 #max_prepared_transactions = 0		# zero disables the feature
 					# (change requires restart)
 # Caution: it is not advisable to set max_prepared_transactions nonzero unless
 # you actively intend to use prepared transactions.
-work_mem = $POSTGRES_WORK_MEM
+work_mem = $POSTGRES_WORK_MEM				# min 64kB
 #hash_mem_multiplier = 2.0		# 1-1000.0 multiplier on hash table work_mem
-maintenance_work_mem = $POSTGRES_MAINTENANCE_WORK_MEM
+maintenance_work_mem = $POSTGRES_MAINTENANCE_WORK_MEM		# min 64kB
 #autovacuum_work_mem = -1		# min 64kB, or -1 to use maintenance_work_mem
 #logical_decoding_work_mem = 64MB	# min 64kB
-max_stack_depth = $POSTGRES_MAX_STACK_DEPTH
+max_stack_depth = $POSTGRES_MAX_STACK_DEPTH			# min 100kB
 #shared_memory_type = mmap		# the default is the first option
 					# supported by the operating system:
 					#   mmap
 					#   sysv
 					#   windows
 					# (change requires restart)
-dynamic_shared_memory_type = $POSTGRES_DYNAMIC_SHARED_MEMORY_TYPE
+dynamic_shared_memory_type = $POSTGRES_DYNAMIC_SHARED_MEMORY_TYPE	# the default is usually the first option
 					# supported by the operating system:
 					#   posix
 					#   sysv
@@ -202,7 +202,7 @@ dynamic_shared_memory_type = $POSTGRES_DYNAMIC_SHARED_MEMORY_TYPE
 # - I/O -
 
 #backend_flush_after = 0		# measured in pages, 0 disables
-effective_io_concurrency = $POSTGRES_EFFECTIVE_IO_CONCURRENCY
+effective_io_concurrency = $POSTGRES_EFFECTIVE_IO_CONCURRENCY		# 1-1000; 0 disables issuing multiple simultaneous IO requests
 #maintenance_io_concurrency = 16	# 1-1000; same as effective_io_concurrency
 #io_max_combine_limit = 128kB		# usually 1-128 blocks (depends on OS)
 					# (change requires restart)
@@ -218,10 +218,10 @@ effective_io_concurrency = $POSTGRES_EFFECTIVE_IO_CONCURRENCY
 
 # - Worker Processes -
 
-max_worker_processes = $POSTGRES_MAX_WORKER_PROCESSES
-max_parallel_workers_per_gather = $POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER
-max_parallel_maintenance_workers = $POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER
-max_parallel_workers = $POSTGRES_MAX_WORKER_PROCESSES
+max_worker_processes = $POSTGRES_MAX_WORKER_PROCESSES		# (change requires restart)
+max_parallel_workers_per_gather = $POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER	# limited by max_parallel_workers
+max_parallel_maintenance_workers = $POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER	# limited by max_parallel_workers
+max_parallel_workers = $POSTGRES_MAX_WORKER_PROCESSES		# number of max_worker_processes that
 					# can be used in parallel operations
 #parallel_leader_participation = on
 
@@ -232,12 +232,12 @@ max_parallel_workers = $POSTGRES_MAX_WORKER_PROCESSES
 
 # - Settings -
 
-wal_level = $POSTGRES_WAL_LEVEL
+wal_level = $POSTGRES_WAL_LEVEL			# minimal, replica, or logical
 					# (change requires restart)
 #fsync = on				# flush data to disk for crash safety
 					# (turning this off can cause
 					# unrecoverable data corruption)
-synchronous_commit = $POSTGRES_SYNCHRONOUS_COMMIT
+synchronous_commit = $POSTGRES_SYNCHRONOUS_COMMIT		# synchronization level;
 					# off, local, remote_write, remote_apply, or on
 #wal_sync_method = fsync		# the default is the first option
 					# supported by the operating system:
@@ -253,7 +253,7 @@ synchronous_commit = $POSTGRES_SYNCHRONOUS_COMMIT
 					# off, pglz, lz4, zstd, or on
 #wal_init_zero = on			# zero-fill new WAL files
 #wal_recycle = on			# recycle WAL files
-wal_buffers = $POSTGRES_WAL_BUFFERS
+wal_buffers = $POSTGRES_WAL_BUFFERS			# min 32kB, -1 sets based on shared_buffers
 					# (change requires restart)
 #wal_writer_delay = 200ms		# 1-10000 milliseconds
 #wal_writer_flush_after = 1MB		# measured in pages, 0 disables
@@ -265,7 +265,7 @@ wal_buffers = $POSTGRES_WAL_BUFFERS
 # - Checkpoints -
 
 #checkpoint_timeout = 5min		# range 30s-1d
-checkpoint_completion_target = $POSTGRES_CHECKPOINT_COMPLETION_TARGET
+checkpoint_completion_target = $POSTGRES_CHECKPOINT_COMPLETION_TARGET	# checkpoint target duration, 0.0 - 1.0
 #checkpoint_flush_after = 0		# measured in pages, 0 disables
 #checkpoint_warning = 30s		# 0 disables
 max_wal_size = $POSTGRES_MAX_WAL_SIZE
@@ -436,7 +436,7 @@ min_wal_size = $POSTGRES_MIN_WAL_SIZE
 # - Planner Cost Constants -
 
 #seq_page_cost = 1.0			# measured on an arbitrary scale
-random_page_cost = $POSTGRES_RANDOM_PAGE_COST
+random_page_cost = $POSTGRES_RANDOM_PAGE_COST			# same scale as above
 #cpu_tuple_cost = 0.01			# same scale as above
 #cpu_index_tuple_cost = 0.005		# same scale as above
 #cpu_operator_cost = 0.0025		# same scale as above
@@ -467,7 +467,7 @@ effective_cache_size = $POSTGRES_EFFECTIVE_CACHE_SIZE
 
 # - Other Planner Options -
 
-default_statistics_target = $POSTGRES_DEFAULT_STATISTICS_TARGET
+default_statistics_target = $POSTGRES_DEFAULT_STATISTICS_TARGET	# range 1-10000
 #constraint_exclusion = partition	# on, off, or partition
 #cursor_tuple_fraction = 0.1		# range 0.0-1.0
 #from_collapse_limit = 8
@@ -558,7 +558,7 @@ default_statistics_target = $POSTGRES_DEFAULT_STATISTICS_TARGET
 					#   fatal
 					#   panic (effectively off)
 
-log_min_duration_statement = $POSTGRES_LOG_MIN_DURATION_STATEMENT
+log_min_duration_statement = $POSTGRES_LOG_MIN_DURATION_STATEMENT	# -1 is disabled, 0 logs all statements
 					# and their durations, > 0 logs only
 					# statements running at least this number
 					# of milliseconds
@@ -642,7 +642,7 @@ log_min_duration_statement = $POSTGRES_LOG_MIN_DURATION_STATEMENT
 #log_temp_files = -1			# log temporary files equal or larger
 					# than the specified size in kilobytes;
 					# -1 disables, 0 logs all temp files
-log_timezone = $POSTGRES_LOG_TIMEZONE
+log_timezone = '$POSTGRES_LOG_TIMEZONE'
 
 # - Process Title -
 
@@ -658,7 +658,7 @@ log_timezone = $POSTGRES_LOG_TIMEZONE
 # - Cumulative Query and Index Statistics -
 
 #track_activities = on
-track_activity_query_size = $POSTGRES_TRACK_ACTIVITY_QUERY_SIZE
+track_activity_query_size = $POSTGRES_TRACK_ACTIVITY_QUERY_SIZE	# (change requires restart)
 #track_counts = on
 #track_cost_delay_timing = off
 #track_io_timing = off
@@ -682,12 +682,12 @@ track_activity_query_size = $POSTGRES_TRACK_ACTIVITY_QUERY_SIZE
 
 # - Automatic Vacuuming -
 
-autovacuum = $POSTGRES_AUTOVACUUM
+autovacuum = $POSTGRES_AUTOVACUUM			# Enable autovacuum subprocess?  'on'
 					# requires track_counts to also be on.
 #autovacuum_worker_slots = 16		# autovacuum worker slots to allocate
 					# (change requires restart)
-autovacuum_max_workers = $POSTGRES_AUTOVACUUM_MAX_WORKERS
-autovacuum_naptime = $POSTGRES_AUTOVACUUM_NAPTIME
+autovacuum_max_workers = $POSTGRES_AUTOVACUUM_MAX_WORKERS		# max number of autovacuum subprocesses
+autovacuum_naptime = $POSTGRES_AUTOVACUUM_NAPTIME		# time between autovacuum runs
 #autovacuum_vacuum_threshold = 50	# min number of row updates before
 					# vacuum
 #autovacuum_vacuum_insert_threshold = 1000	# min number of row inserts
@@ -695,10 +695,10 @@ autovacuum_naptime = $POSTGRES_AUTOVACUUM_NAPTIME
 						# vacuums
 #autovacuum_analyze_threshold = 50	# min number of row updates before
 					# analyze
-autovacuum_vacuum_scale_factor = $POSTGRES_AUTOVACUUM_VACUUM_SCALE_FACTOR
+autovacuum_vacuum_scale_factor = $POSTGRES_AUTOVACUUM_VACUUM_SCALE_FACTOR	# fraction of table size before vacuum
 #autovacuum_vacuum_insert_scale_factor = 0.2	# fraction of unfrozen pages
           # before insert vacuum
-autovacuum_analyze_scale_factor = $POSTGRES_AUTOVACUUM_ANALYZE_SCALE_FACTOR
+autovacuum_analyze_scale_factor = $POSTGRES_AUTOVACUUM_ANALYZE_SCALE_FACTOR	# fraction of table size before analyze
 #autovacuum_vacuum_max_threshold = 100000000    # max number of row updates
 						# before vacuum; -1 disables max
 						# threshold
@@ -707,7 +707,7 @@ autovacuum_analyze_scale_factor = $POSTGRES_AUTOVACUUM_ANALYZE_SCALE_FACTOR
 #autovacuum_multixact_freeze_max_age = 400000000	# maximum multixact age
 							# before forced vacuum
 							# (change requires restart)
-autovacuum_vacuum_cost_delay = $POSTGRES_AUTOVACUUM_VACUUM_COST_DELAY
+autovacuum_vacuum_cost_delay = $POSTGRES_AUTOVACUUM_VACUUM_COST_DELAY	# default vacuum cost delay for
 					# autovacuum, in milliseconds;
 					# -1 means use vacuum_cost_delay
 #autovacuum_vacuum_cost_limit = -1	# default vacuum cost limit for
@@ -764,11 +764,11 @@ autovacuum_vacuum_cost_delay = $POSTGRES_AUTOVACUUM_VACUUM_COST_DELAY
 #default_transaction_read_only = off
 #default_transaction_deferrable = off
 #session_replication_role = 'origin'
-statement_timeout = $POSTGRES_STATEMENT_TIMEOUT
+statement_timeout = $POSTGRES_STATEMENT_TIMEOUT				# in milliseconds, 0 is disabled
 #transaction_timeout = 0			# in milliseconds, 0 is disabled
 #lock_timeout = 0				# in milliseconds, 0 is disabled
-idle_in_transaction_session_timeout = $POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT
-idle_session_timeout = $POSTGRES_IDLE_SESSION_TIMEOUT
+idle_in_transaction_session_timeout = $POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT	# in milliseconds, 0 is disabled
+idle_session_timeout = $POSTGRES_IDLE_SESSION_TIMEOUT			# in milliseconds, 0 is disabled
 #bytea_output = 'hex'			# hex, escape
 #xmlbinary = 'base64'
 #xmloption = 'content'
@@ -778,9 +778,9 @@ idle_session_timeout = $POSTGRES_IDLE_SESSION_TIMEOUT
 
 # - Locale and Formatting -
 
-datestyle = $POSTGRES_DATESTYLE
+datestyle = '$POSTGRES_DATESTYLE'
 #intervalstyle = 'postgres'
-timezone = $POSTGRES_TIMEZONE
+timezone = '$POSTGRES_TIMEZONE'
 #timezone_abbreviations = 'Default'	# Select the set of available time zone
 					# abbreviations.  Currently, there are
 					#   Default
@@ -810,7 +810,7 @@ timezone = $POSTGRES_TIMEZONE
 
 #local_preload_libraries = ''
 #session_preload_libraries = ''
-shared_preload_libraries = $POSTGRES_SHARED_PRELOAD_LIBRARIES
+shared_preload_libraries = '$POSTGRES_SHARED_PRELOAD_LIBRARIES'		# (change requires restart)
 #jit_provider = 'llvmjit'		# JIT library to use
 
 # - Other Defaults -
